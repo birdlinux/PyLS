@@ -3,19 +3,33 @@ import sys
 import stat
 import datetime
 
-def print_folders_and_files(root_path):
+def print_folders_and_files(root_path, show_hidden=False):
     items = os.listdir(root_path)
 
+    hidden_folders = []
+    hidden_files = []
     folders = []
     files = []
+
     for item in items:
         item_path = os.path.join(root_path, item)
         if os.path.isdir(item_path):
-            folders.append(item)
+            if item.startswith('.') and show_hidden:
+                hidden_folders.append(item)
+            elif not item.startswith('.'):
+                folders.append(item)
         else:
-            files.append(item)
+            if item.startswith('.') and show_hidden:
+                hidden_files.append(item)
+            elif not item.startswith('.'):
+                files.append(item)
 
-    for folder in folders:
+    hidden_folders.sort()
+    hidden_files.sort()
+    folders.sort()
+    files.sort()
+
+    for folder in hidden_folders + folders:
         folder_path = os.path.join(root_path, folder)
         folder_stat = os.stat(folder_path)
         mode = folder_stat.st_mode
@@ -28,7 +42,7 @@ def print_folders_and_files(root_path):
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime('%b %d %H:%M')
         print(f"{mode_str} {nlink:<4d} {uid:<4d} {gid:<4d} {size:<8d} {mtime_str}   {folder}")
 
-    for file in files:
+    for file in hidden_files + files:
         file_path = os.path.join(root_path, file)
         file_stat = os.stat(file_path)
         mode = file_stat.st_mode
@@ -43,7 +57,12 @@ def print_folders_and_files(root_path):
 
 if len(sys.argv) > 1:
     directory_path = sys.argv[1]
+    if len(sys.argv) > 2 and sys.argv[2] == '-a':
+        show_hidden = True
+    else:
+        show_hidden = False
 else:
     directory_path = os.getcwd()
+    show_hidden = False
 
-print_folders_and_files(directory_path)
+print_folders_and_files(directory_path, show_hidden)
